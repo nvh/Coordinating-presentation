@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Diff</key>
+	<array>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>protocol Coordinating: class {
+    associatedtype RootViewController: UIViewController
+    associatedtype ViewController: UIViewController
+    var root: RootViewController { get }
+    var viewController: ViewController? { get set }
+    func createViewController() -&gt; ViewController
+    func configure(_ viewController: ViewController)
+    func show(_ viewController: ViewController)
+    func dismiss()
+}
+extension Coordinating {
+    func start() {
+        let vc = createViewController()
+        viewController = vc
+        configure(vc)
+        show(vc)
+    }
+    func stop() {
+        dismiss()
+        viewController = nil
+    }
+}
+
+extension Coordinating {
+    func configure(_ viewController: ViewController) {
+    }
+    func show(_ viewController: ViewController) {
+        root.present(viewController, animated: true , completion: nil)
+    }
+    func dismiss() {
+        root.dismiss(animated: true, completion: nil)
+    }
+}
+protocol NavigationCoordinating: Coordinating {
+    typealias RootViewController = UINavigationController
+}
+extension NavigationCoordinating {
+    func show(_ viewController: Self.ViewController) {
+        (root as! UINavigationController).pushViewController(viewController, animated: true)
+    }
+    func dismiss() {
+        (root as! UINavigationController).dismiss(animated: true, completion: nil)
+    }
+}
+protocol PopoverCoordinating: Coordinating {
+    var barButtonItem: UIBarButtonItem? { get }
+}
+extension PopoverCoordinating {
+    func show(_ viewController: Self.ViewController) {
+        viewController.popoverPresentationController?.barButtonItem = barButtonItem
+        root.present(viewController, animated: true, completion: nil)
+    }
+}
+class PhotoCollectionCoordinator: NSObject, NavigationCoordinating, Editing, Sharing, ImagePicking {
+    var dataSource = PhotoListDataSource(data: loadData())
+    
+    let root: UINavigationController
+    var viewController: PhotoCollectionViewController?
+    var imageCoordinator: ImageCoordinator?
+    var imagePickerCoordinator: ImagePickerCoordinator?
+    var shareCoordinator: ShareCoordinator&lt;UIImage&gt;?
+    var sharedItems: [UIImage] {
+        return viewController?.collectionView?.indexPathsForSelectedItems?.map({$0.item
+        }).flatMap(dataSource.item(at:)) ?? []
+    }
+    init(root: UINavigationController) {
+        self.root = root
+        dataSource.insert(#imageLiteral(resourceName: "AddButton.png"), at: dataSource.numberOfItems)
+    }
+    func createViewController() -&gt; PhotoCollectionViewController {
+        return PhotoCollectionViewController(collectionViewLayout: photoLayout)
+    }
+    func configure(_ viewController: PhotoCollectionViewController) {
+        viewController.collectionView?.dataSource = dataSource
+        viewController.collectionView?.delegate = self
+        viewController.navigationItem.rightBarButtonItem = editButton
+        viewController.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(share(_:)))
+    }
+    func share(_ sender: AnyObject) {
+        didTapShareButton(sender)
+    }
+    
+    func didShare() {
+        editing = false
+    }
+    
+    var editing = false {
+        didSet {
+            if editing {
+                viewController?.navigationItem.rightBarButtonItem = doneButton
+                viewController?.collectionView?.allowsMultipleSelection = true
+            } else {
+                viewController?.navigationItem.rightBarButtonItem = editButton
+                viewController?.collectionView?.allowsMultipleSelection = false
+                for indexPath in viewController?.collectionView?.indexPathsForSelectedItems ?? [] {
+                    viewController?.collectionView?.deselectItem(at: indexPath, animated: false)
+                }
+            }
+        }
+    }
+    public func edit(_ sender: AnyObject) {
+        editing = true
+    }
+    public func doneEditing(_ sender: AnyObject) {
+        editing = false
+    }
+    func didPickImage(image: UIImage) {
+        dataSource.insert(image, at: 0)
+        viewController?.collectionView?.insertItems(at: [IndexPath(item: 0, section: 0)])
+    }
+}
+extension PhotoCollectionCoordinator: UICollectionViewDelegate {
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard indexPath.item != dataSource.numberOfItems - 1 else {
+            pickImage()
+            collectionView.deselectItem(at: indexPath, animated: false)
+            return
+        }
+        guard !editing else { return }
+        guard let item = dataSource.item(at: indexPath.item) else { return }
+        imageCoordinator = ImageCoordinator(root: root, image: item)
+        imageCoordinator?.start()
+    }
+}
+
+class ImageCoordinator: NavigationCoordinating, Sharing {
+    let root: UINavigationController
+    var viewController: ImageViewController?
+    let image: UIImage
+    var sharedItems: [UIImage] {
+        return [image]
+    }
+    var shareCoordinator: ShareCoordinator&lt;UIImage&gt;?
+    init(root: UINavigationController, image: UIImage) {
+        self.root = root
+        self.image = image
+    }
+    func createViewController() -&gt; ImageViewController {
+        return ImageViewController(image:  image)
+    }
+    func configure(_ viewController: ImageViewController) {
+        viewController.didTapShareButton = didTapShareButton
+    }
+    
+    
+}
+
+</string>
+			<key>ModifiedRange</key>
+			<string>{74, 5369}</string>
+			<key>OriginalContent</key>
+			<string></string>
+			<key>OriginalRange</key>
+			<string>{74, 0}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string></string>
+			<key>ModifiedRange</key>
+			<string>{5516, 0}</string>
+			<key>OriginalContent</key>
+			<string>    let dataSource = PhotoListDataSource(data: loadData())
+    
+</string>
+			<key>OriginalRange</key>
+			<string>{147, 64}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string></string>
+			<key>ModifiedRange</key>
+			<string>{5755, 0}</string>
+			<key>OriginalContent</key>
+			<string>        collectionView?.dataSource = dataSource
+</string>
+			<key>OriginalRange</key>
+			<string>{450, 48}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string></string>
+			<key>ModifiedRange</key>
+			<string>{5761, 0}</string>
+			<key>OriginalContent</key>
+			<string>    
+</string>
+			<key>OriginalRange</key>
+			<string>{504, 5}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>}
+
+class ShareCoordinator&lt;SharedType: AnyObject&gt;: PopoverCoordinating {
+    var barButtonItem: UIBarButtonItem?
+    let root: UIViewController
+    var viewController: UIActivityViewController?
+    let sharedItems: [SharedType]
+    var completionHandler: (() -&gt; Void)?
+    init(root: UIViewController, sharedItems: [SharedType]) {
+        self.root = root
+        self.sharedItems = sharedItems
+    }
+    func createViewController() -&gt; UIActivityViewController {
+        return UIActivityViewController(activityItems: sharedItems, applicationActivities: nil)
+    }
+    func configure(_ viewController: UIActivityViewController) {
+        viewController.completionWithItemsHandler = { _  in
+            self.completionHandler?()
+            
+        }
+    }
+    
+}
+protocol Sharing: class {
+    associatedtype SharedType: AnyObject
+    var sharedItems: [SharedType] { get }
+    var shareCoordinator: ShareCoordinator&lt;SharedType&gt;? { get set }
+    func didTapShareButton(_ sender: AnyObject)
+    func didShare()
+}
+extension Sharing where Self: Coordinating {
+    func didTapShareButton(_ sender: AnyObject) {
+        shareCoordinator = ShareCoordinator(root: root, sharedItems: sharedItems)
+        shareCoordinator?.barButtonItem = sender as? UIBarButtonItem
+        shareCoordinator?.completionHandler = didShare
+        shareCoordinator?.start()
+    }
+    func didShare() {
+        shareCoordinator?.stop()
+        shareCoordinator = nil
+    }
+}
+
+class ImagePickerCoordinator: NSObject, Coordinating {
+    let root: UIViewController
+    var viewController: UIImagePickerController?
+    var didComplete: (UIImage?) -&gt; Void
+    init(root: UIViewController, didComplete: (UIImage?) -&gt; Void) {
+        self.root = root
+        self.didComplete = didComplete
+    }
+    func createViewController() -&gt; UIImagePickerController {
+        return UIImagePickerController()
+    }
+    func configure(_ viewController: UIImagePickerController) {
+        viewController.sourceType = .photoLibrary
+        viewController.delegate = self
+        
+    }
+}
+extension ImagePickerCoordinator: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        didComplete(nil)
+    }
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject]) {
+        if let image = info[UIImagePickerControllerOriginalImage] as? UIImage {
+            didComplete(image)
+            return
+        }
+        didComplete(nil)
+    }
+}
+protocol ImagePicking: class {
+    var imagePickerCoordinator: ImagePickerCoordinator? { get set }
+    func pickImage()
+    func didPickImage(image: UIImage)
+}
+extension ImagePicking where Self: Coordinating {
+    func pickImage() {
+        imagePickerCoordinator = ImagePickerCoordinator(root: root , didComplete: didComplete)
+        imagePickerCoordinator?.start()
+    }
+    func didComplete(image: UIImage?) {
+        imagePickerCoordinator?.stop()
+        imagePickerCoordinator = nil
+        if let image = image {
+            didPickImage(image:  image)
+        }
+    }
+}
+
+
+let nav = UINavigationController()
+let root = PhotoCollectionCoordinator(root: nav)
+PlaygroundPage.current.liveView = nav
+PlaygroundPage.current.needsIndefiniteExecution = true
+root.start()</string>
+			<key>ModifiedRange</key>
+			<string>{5880, 3314}</string>
+			<key>OriginalContent</key>
+			<string>    
+    public override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let item = dataSource.item(at: indexPath.item) else { return }
+        let viewController = ImageViewController(image: item)
+        self.navigationController?.pushViewController(viewController, animated: true)
+    }
+    
+}
+
+let nav = UINavigationController(rootViewController: PhotoCollectionViewController(collectionViewLayout: photoLayout))
+
+
+PlaygroundPage.current.liveView = nav</string>
+			<key>OriginalRange</key>
+			<string>{628, 518}</string>
+		</dict>
+	</array>
+	<key>File</key>
+	<string>Chapters/Demo.playgroundchapter/Pages/Coordinators.playgroundpage/Contents.swift</string>
+</dict>
+</plist>
