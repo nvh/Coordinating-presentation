@@ -12,6 +12,8 @@
 	<string>1.0</string>
 	<key>DeploymentTarget</key>
 	<string>ios10.0</string>
+	<key>ImageReference</key>
+	<string>cover.png</string>
 	<key>Name</key>
 	<string>SwiftConf</string>
 	<key>Version</key>
