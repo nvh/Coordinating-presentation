@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Diff</key>
+	<array>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>protocol Coordinating: class {
+    associatedtype ViewController: UIViewController
+    var viewController: ViewController? { get set }
+    var root: UIViewController { get }
+    func createViewController() -&gt; ViewController
+    func configure(vc: ViewController)
+    func show(vc: ViewController)
+}
+extension Coordinating {
+    func configure(vc: ViewController) {
+    }
+    func show(vc: ViewController) {
+        root.show(vc, sender: self)
+    }
+    func dismiss() {
+        root.dismiss(animated: true, completion: nil)
+    }
+}
+extension Coordinating {
+    func start() {
+        let vc = createViewController()
+        self.viewController = vc
+        configure(vc: vc)
+        show(vc: vc)
+    }
+    func stop() {
+        dismiss()
+        self.viewController = nil
+    }
+}
+protocol PopopoverCoordinating: Coordinating {
+    var barButtonItem: UIBarButtonItem? { get }
+}
+extension PopopoverCoordinating {
+    func show(vc: ViewController) {
+        vc.popoverPresentationController?.barButtonItem = barButtonItem
+        root.present(vc, animated: true, completion: nil)
+    }
+}
+</string>
+			<key>ModifiedRange</key>
+			<string>{100, 1085}</string>
+			<key>OriginalContent</key>
+			<string>
+</string>
+			<key>OriginalRange</key>
+			<string>{100, 1}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>class JourneyCoordinator: Coordinating, Sharing, Editing {
+    let dataSource = SightListDataSource()
+    
+    var viewController: JourneyCollectionViewController?
+    let root: UIViewController
+    
+    var sightCoordinator: SightCoordinator?
+    
+    //Sharing
+    var shareCoordinator: ShareCoordinator&lt;Sight&gt;?
+    var sharedItems: [Sight] {
+        return viewController?.collectionView?.indexPathsForSelectedItems?.map({$0.item}
+        ).flatMap(dataSource.item(at:)) ?? []
+    }
+    
+    init(root: UIViewController) {
+        self.root = root
+    }
+    func createViewController() -&gt; JourneyCollectionViewController {
+        return JourneyCollectionViewController(collectionViewLayout: layout)
+    }
+    func configure(vc: JourneyCollectionViewController) {
+        vc.collectionView?.dataSource = dataSource
+        vc.didSelectItem = didSelectItem(at:)
+        vc.navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(share(_:)))
+        vc.navigationItem.rightBarButtonItem = editButton
+    }
+    @objc func share(_ sender: UIBarButtonItem) {
+        didTapShareButton(sender)
+    }
+    
+    func didSelectItem(at indexPath: IndexPath) {
+        guard
+            !editing, let item = dataSource.item(at: indexPath.item)
+            else { return }
+        self.sightCoordinator = SightCoordinator(root: root, sight: item)
+        self.sightCoordinator?.start()
+    }
+    
+    var editing = false {
+        didSet {
+            if editing {
+                viewController?.navigationItem.rightBarButtonItem = doneButton
+                viewController?.collectionView?.allowsMultipleSelection = true
+            } else {
+                viewController?.navigationItem.rightBarButtonItem = editButton
+                viewController?.collectionView?.allowsMultipleSelection = false
+                for indexPath in viewController?.collectionView?.indexPathsForSelectedItems ?? [] {
+                    viewController?.collectionView?.deselectItem(at: indexPath, animated: false)
+                }
+            }
+        }
+    }
+    public func edit(_ sender: AnyObject) {
+        editing = true
+    }
+    public func doneEditing(_ sender: AnyObject) {
+        editing = false
+    }
+    
+}
+class SightCoordinator: Coordinating, Sharing {
+    var viewController: SightViewController?
+    let root: UIViewController
+    let sight: Sight
+    
+    var shareCoordinator: ShareCoordinator&lt;Sight&gt;?
+    var sharedItems: [Sight] {
+        return [sight]
+    }
+    
+    init(root: UIViewController, sight: Sight) {
+        self.root = root
+        self.sight = sight
+    }
+    func createViewController() -&gt; SightViewController {
+        return SightViewController(sight: sight)
+    }
+    func configure(vc: SightViewController) {
+        vc.didTapShareButton = didTapShareButton(_:)
+    }
+}
+</string>
+			<key>ModifiedRange</key>
+			<string>{1211, 2848}</string>
+			<key>OriginalContent</key>
+			<string></string>
+			<key>OriginalRange</key>
+			<string>{127, 0}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>class ShareCoordinator&lt;SharedType&gt;: PopopoverCoordinating {
+    var barButtonItem: UIBarButtonItem?
+    var viewController: UIActivityViewController?
+    let root: UIViewController
+    let sharedItems: [SharedType]
+    var completionHandler: (() -&gt; Void)?
+    
+    init(root: UIViewController, sharedItems: [SharedType]) {
+        self.root = root
+        self.sharedItems = sharedItems
+    }
+    func createViewController() -&gt; UIActivityViewController {
+        return UIActivityViewController(activityItems: sharedItems, applicationActivities: nil)
+    }
+    func configure(vc: UIActivityViewController) {
+        vc.completionWithItemsHandler = { [weak self] _ in
+            self?.completionHandler?()
+        }
+    }
+}
+</string>
+			<key>ModifiedRange</key>
+			<string>{4060, 724}</string>
+			<key>OriginalContent</key>
+			<string></string>
+			<key>OriginalRange</key>
+			<string>{128, 0}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>    var didSelectItem: ((IndexPath) -&gt; Void)?
+</string>
+			<key>ModifiedRange</key>
+			<string>{4888, 46}</string>
+			<key>OriginalContent</key>
+			<string>    let dataSource = SightListDataSource()
+
+</string>
+			<key>OriginalRange</key>
+			<string>{232, 44}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string></string>
+			<key>ModifiedRange</key>
+			<string>{5173, 0}</string>
+			<key>OriginalContent</key>
+			<string>        collectionView?.dataSource = dataSource
+</string>
+			<key>OriginalRange</key>
+			<string>{515, 48}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>        didSelectItem?(indexPath)
+</string>
+			<key>ModifiedRange</key>
+			<string>{5601, 34}</string>
+			<key>OriginalContent</key>
+			<string>        guard let item = dataSource.item(at: indexPath.item) else { return }
+        let viewController = SightViewController(sight: item)
+        self.navigationController?.show(viewController, sender: self)
+</string>
+			<key>OriginalRange</key>
+			<string>{991, 209}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>protocol Sharing: class {
+    associatedtype SharedType
+    var shareCoordinator: ShareCoordinator&lt;SharedType&gt;? { get set }
+    var sharedItems: [SharedType] { get }
+    func didTapShareButton(_ sender: UIBarButtonItem)
+    func didShare()
+}
+extension Sharing where Self: Coordinating {
+    func didTapShareButton(_ sender: UIBarButtonItem) {
+        self.shareCoordinator = ShareCoordinator(root: root, sharedItems: sharedItems)
+        self.shareCoordinator?.barButtonItem = sender
+        self.shareCoordinator?.completionHandler = didCompleteShare
+        self.shareCoordinator?.start()
+    }
+    func didCompleteShare() {
+        self.shareCoordinator?.stop()
+        self.shareCoordinator = nil
+        didShare()
+    }
+    func didShare() {
+        
+    }
+}
+</string>
+			<key>ModifiedRange</key>
+			<string>{5664, 765}</string>
+			<key>OriginalContent</key>
+			<string></string>
+			<key>OriginalRange</key>
+			<string>{1229, 0}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>let nav = UINavigationController()
+let mainCoordinator = JourneyCoordinator(root: nav)
+</string>
+			<key>ModifiedRange</key>
+			<string>{6449, 87}</string>
+			<key>OriginalContent</key>
+			<string>let viewController = JourneyCollectionViewController(collectionViewLayout: layout)
+let nav = UINavigationController(rootViewController: viewController)
+</string>
+			<key>OriginalRange</key>
+			<string>{1249, 152}</string>
+		</dict>
+		<dict>
+			<key>ModifiedContent</key>
+			<string>mainCoordinator.start()
+
+</string>
+			<key>ModifiedRange</key>
+			<string>{6574, 25}</string>
+			<key>OriginalContent</key>
+			<string></string>
+			<key>OriginalRange</key>
+			<string>{1439, 0}</string>
+		</dict>
+	</array>
+	<key>File</key>
+	<string>Chapters/Demo.playgroundchapter/Pages/Coordinators.playgroundpage/Contents.swift</string>
+</dict>
+</plist>
